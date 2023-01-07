@@ -1,0 +1,21 @@
+# Build output:
+.nyc_output
+/build
+/coverage
+/intermediate
+/lib
+/src/polkadot/polkadot-sdk-bundle.js
+/edge/*
+
+# Package managers:
+node_modules/
+npm-debug.log
+package-lock.json
+yarn-error.log
+stats.json
+
+# Editors:
+.DS_Store
+.idea/
+.vscode/
+.vscode/settings.json
