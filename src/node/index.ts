@@ -27,6 +27,12 @@ import { CliConfig, loadConfig } from './cliConfig'
 
 lockEdgeCorePlugins()
 
+// Test server URLs (same as EdgeReact GUI maestro mode):
+// Note: authServer requires /api suffix in older versions of edge-core-js
+const AUTH_TEST_SERVER = 'https://login-tester.edge.app/api'
+const INFO_TEST_SERVER = 'https://info-tester.edge.app'
+const SYNC_TEST_SERVER = 'https://sync-tester-us1.edge.app'
+
 // Display the original source location for errors:
 sourceMapSupport.install()
 
@@ -40,6 +46,7 @@ const getopt = new Getopt([
   ['u', 'username=ARG', 'Username'],
   ['p', 'password=ARG', 'Password'],
   ['w', 'wallet=ARG', 'Wallet ID'],
+  ['t', 'test', 'Use test servers (login-tester, info-tester, sync-tester)'],
   ['h', 'help', 'Display options']
 ])
 
@@ -142,12 +149,29 @@ async function makeSession(config: CliConfig): Promise<Session> {
     xdgBasedir.config != null
       ? path.join(xdgBasedir.config, '/edge-cli')
       : './edge-cli'
-  const { authServer, appId = '', apiKey = '', directory = defaultDir } = config
+  const {
+    authServer,
+    appId = '',
+    apiKey = '',
+    directory = defaultDir,
+    testMode = false
+  } = config
+
+  // Use test servers when testMode is enabled (same as EdgeReact GUI maestro mode):
+  const effectiveAuthServer = testMode ? AUTH_TEST_SERVER : authServer
+  const infoServer = testMode ? INFO_TEST_SERVER : undefined
+  const syncServer = testMode ? SYNC_TEST_SERVER : undefined
+
+  if (testMode) {
+    console.log('Using test servers')
+  }
 
   const context = await makeEdgeContext({
     apiKey,
     appId,
-    authServer,
+    authServer: effectiveAuthServer,
+    infoServer,
+    syncServer,
     path: directory,
     plugins: {},
     onLog(event) {
@@ -253,6 +277,7 @@ async function main(): Promise<void> {
   config.authServer = options['auth-server'] ?? config.authServer
   config.directory = options.directory ?? config.workingDir
   config.password = options.password ?? config.password
+  config.testMode = options.test != null
   config.username = options.username ?? config.username
 
   if (argv.length === 0) {

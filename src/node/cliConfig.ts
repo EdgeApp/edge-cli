@@ -9,6 +9,7 @@ export interface CliConfig {
   authServer?: string
   directory?: string
   password?: string
+  testMode?: boolean
   username?: string
   workingDir?: string
 }
