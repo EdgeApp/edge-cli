@@ -140,8 +140,8 @@ function showCoreLogs(): void {
 async function makeSession(config: CliConfig): Promise<Session> {
   const defaultDir =
     xdgBasedir.config != null
-      ? path.join(xdgBasedir.config, '/airbitz')
-      : './airbitz'
+      ? path.join(xdgBasedir.config, '/edge-cli')
+      : './edge-cli'
   const { authServer, appId = '', apiKey = '', directory = defaultDir } = config
 
   const context = await makeEdgeContext({
@@ -163,7 +163,7 @@ async function makeSession(config: CliConfig): Promise<Session> {
 }
 
 /**
- * Sets up a session object with the Airbitz objects needed by the command.
+ * Sets up a session object with the Edge objects needed by the command.
  * @return a promise
  */
 async function prepareSession(

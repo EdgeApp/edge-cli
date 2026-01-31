@@ -1,37 +1,37 @@
 {
-  "name": "airbitz-cli",
+  "name": "edge-cli",
   "version": "2.0.0",
-  "description": "Airbitz CLI tool",
-  "homepage": "https://airbitz.co",
+  "description": "Edge CLI tool",
+  "homepage": "https://edge.app",
   "repository": {
     "type": "git",
-    "url": "git@github.com:Airbitz/airbitz-cli.git"
+    "url": "git@github.com:EdgeApp/edge-cli.git"
   },
   "license": "SEE LICENSE IN LICENSE",
-  "author": "Airbitz, Inc.",
+  "author": "Edge Wallet, Inc.",
   "contributors": [
-    "Paul Puey <paul@airbitz.co>",
-    "William Swanson <william@airbitz.co>",
-    "Tim Horton <tim@airbitz.co>"
+    "Paul Puey <paul@edge.app>",
+    "William Swanson <william@edge.app>",
+    "Tim Horton <tim@edge.app>"
   ],
   "type": "module",
   "exports": {
     ".": {
       "import": {
         "types": "./src/index.d.ts",
-        "default": "./lib/airbitz-cli.js"
+        "default": "./lib/edge-cli.js"
       },
       "require": {
         "types": "./src/index.d.ts",
-        "default": "./lib/cjs/airbitz-cli.js"
+        "default": "./lib/cjs/edge-cli.js"
       }
     },
     "./package.json": "./package.json"
   },
-  "main": "./lib/cjs/airbitz-cli.js",
-  "module": "./lib/airbitz-cli.js",
+  "main": "./lib/cjs/edge-cli.js",
+  "module": "./lib/edge-cli.js",
   "types": "./src/index.d.ts",
-  "bin": "./bin/airbitz-cli",
+  "bin": "./bin/edge-cli",
   "files": [
     "/bin/",
     "/CHANGELOG.md",

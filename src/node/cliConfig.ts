@@ -39,7 +39,7 @@ export function loadConfig(configPath?: string): CliConfig {
     }
   } else if (xdgBasedir.config != null) {
     try {
-      where = resolve(join(xdgBasedir.config, '/airbitz/airbitz.conf'))
+      where = resolve(join(xdgBasedir.config, '/edge-cli/edge-cli.conf'))
       text = fs.readFileSync(where, 'utf8')
     } catch (error) {
       // It's fine if the default location doesn't have a file

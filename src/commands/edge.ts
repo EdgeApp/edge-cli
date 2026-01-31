@@ -14,7 +14,7 @@ command(
 
     // Request the login:
     const pending = await session.context.requestEdgeLogin({})
-    console.log(`airbitz://edge/${pending.id}`)
+    console.log(`edge://edge/${pending.id}`)
 
     // Subscribe to login events:
     await new Promise((resolve, reject) => {

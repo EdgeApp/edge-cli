@@ -1,6 +1,8 @@
-# airbitz-cli
+# edge-cli
 
 ## Unreleased
+
+- changed: Rebrand from airbitz-cli to edge-cli.
 
 ## 2.0.0 (2024-10-03)
 
@@ -27,7 +29,7 @@
 
 ## 1.0.2 (2023-08-10)
 
-- fixed: Correctly mark the `airbitz-cli` executable as being CommonJS.
+- fixed: Correctly mark the `edge-cli` executable as being CommonJS.
 
 ## 1.0.1 (2023-07-31)
 
