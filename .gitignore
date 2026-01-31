@@ -12,3 +12,6 @@ yarn-error.log
 .DS_Store
 .idea/
 .vscode/
+
+# API keys (use keys.json.sample as template):
+keys.json

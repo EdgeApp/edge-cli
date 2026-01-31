@@ -1,10 +1,13 @@
 import '../commands/all'
 
 import {
+  addEdgeCorePlugins,
   asMaybePasswordError,
+  EdgeCorePluginsInit,
   lockEdgeCorePlugins,
   makeEdgeContext
 } from 'edge-core-js'
+import currencyPlugins from 'edge-currency-plugins'
 import parse from 'lib-cmdparse'
 import { dim, green, red } from 'nanocolors'
 import Getopt from 'node-getopt'
@@ -24,12 +27,29 @@ import {
 import { printCommandList } from '../commands/help'
 import { Session } from '../util/session'
 import { CliConfig, loadConfig } from './cliConfig'
+import { loadKeys } from './keysConfig'
 
+// Register currency plugins with edge-core-js
+addEdgeCorePlugins(currencyPlugins)
 lockEdgeCorePlugins()
 
+// Load API keys from keys.json
+const keysConfig = loadKeys()
+
+// Build the plugins init object - enable all currency plugins with their API keys
+const pluginsInit: EdgeCorePluginsInit = {}
+for (const pluginId of Object.keys(currencyPlugins)) {
+  const pluginKeys = keysConfig.pluginApiKeys[pluginId]
+  // If pluginKeys is an object, pass it as init options; otherwise just enable the plugin
+  if (pluginKeys != null && typeof pluginKeys === 'object') {
+    pluginsInit[pluginId] = pluginKeys as { [key: string]: unknown }
+  } else {
+    pluginsInit[pluginId] = true
+  }
+}
+
 // Test server URLs (same as EdgeReact GUI maestro mode):
-// Note: authServer requires /api suffix in older versions of edge-core-js
-const AUTH_TEST_SERVER = 'https://login-tester.edge.app/api'
+const LOGIN_TEST_SERVER = 'https://login-tester.edge.app'
 const INFO_TEST_SERVER = 'https://info-tester.edge.app'
 const SYNC_TEST_SERVER = 'https://sync-tester-us1.edge.app'
 
@@ -150,15 +170,21 @@ async function makeSession(config: CliConfig): Promise<Session> {
       ? path.join(xdgBasedir.config, '/edge-cli')
       : './edge-cli'
   const {
-    authServer,
     appId = '',
-    apiKey = '',
+    apiKey,
     directory = defaultDir,
     testMode = false
   } = config
 
+  // Use API key from keys.json if not overridden by config/command line
+  const effectiveApiKey = apiKey ?? keysConfig.edgeApiKey
+  const apiSecret =
+    keysConfig.edgeApiSecret != null
+      ? Buffer.from(keysConfig.edgeApiSecret, 'hex')
+      : undefined
+
   // Use test servers when testMode is enabled (same as EdgeReact GUI maestro mode):
-  const effectiveAuthServer = testMode ? AUTH_TEST_SERVER : authServer
+  const loginServer = testMode ? LOGIN_TEST_SERVER : undefined
   const infoServer = testMode ? INFO_TEST_SERVER : undefined
   const syncServer = testMode ? SYNC_TEST_SERVER : undefined
 
@@ -167,13 +193,14 @@ async function makeSession(config: CliConfig): Promise<Session> {
   }
 
   const context = await makeEdgeContext({
-    apiKey,
+    apiKey: effectiveApiKey,
+    apiSecret,
     appId,
-    authServer: effectiveAuthServer,
+    loginServer,
     infoServer,
     syncServer,
     path: directory,
-    plugins: {},
+    plugins: pluginsInit,
     onLog(event) {
       pendingLogs.push(`${event.source}: ${event.message}`)
     }

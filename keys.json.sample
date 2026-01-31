@@ -1,0 +1,36 @@
+{
+  "edgeApiKey": "xxx",
+  "edgeApiSecret": "xxx",
+  "pluginApiKeys": {
+    "bitcoin": {},
+    "bitcoincash": {},
+    "bitcoincashtestnet": {},
+    "bitcoingold": {},
+    "bitcoingoldtestnet": {},
+    "bitcoinsv": {},
+    "bitcointestnet": {},
+    "bitcointestnet4": {},
+    "dash": {},
+    "digibyte": {},
+    "dogecoin": {},
+    "eboost": {},
+    "ecash": {},
+    "feathercoin": {},
+    "groestlcoin": {},
+    "litecoin": {
+      "nowNodesApiKey": "xxx"
+    },
+    "pivx": {
+      "nowNodesApiKey": "xxx"
+    },
+    "qtum": {},
+    "ravencoin": {},
+    "smartcash": {},
+    "ufo": {},
+    "vertcoin": {},
+    "zcoin": {
+      "nowNodesApiKey": "xxx"
+    },
+    "badcoin": {}
+  }
+}
