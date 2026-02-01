@@ -31,6 +31,72 @@
     "zcoin": {
       "nowNodesApiKey": "xxx"
     },
-    "badcoin": {}
+    "badcoin": {},
+    "ethereum": {
+      "enabled": true,
+      "evmScanApiKey": ["xxx"],
+      "infuraProjectId": "xxx",
+      "nowNodesApiKey": "xxx",
+      "blockchairApiKey": "xxx",
+      "alchemyApiKey": "xxx",
+      "drpcApiKey": "xxx"
+    },
+    "polygon": {
+      "evmScanApiKey": ["xxx"],
+      "drpcApiKey": "xxx"
+    },
+    "arbitrum": {
+      "evmScanApiKey": ["xxx"],
+      "drpcApiKey": "xxx"
+    },
+    "optimism": {
+      "evmScanApiKey": ["xxx"],
+      "drpcApiKey": "xxx"
+    },
+    "base": {
+      "evmScanApiKey": ["xxx"],
+      "drpcApiKey": "xxx"
+    },
+    "avalanche": {
+      "evmScanApiKey": ["xxx"],
+      "drpcApiKey": "xxx"
+    },
+    "binancesmartchain": {
+      "evmScanApiKey": ["xxx"],
+      "drpcApiKey": "xxx"
+    },
+    "fantom": {
+      "evmScanApiKey": ["xxx"]
+    },
+    "solana": {
+      "alchemyApiKey": "xxx",
+      "heliusApiKey": "xxx",
+      "poktPortalApiKey": "xxx"
+    },
+    "ripple": {},
+    "stellar": {},
+    "tron": {},
+    "algorand": {},
+    "cardano": {},
+    "hedera": {},
+    "fio": {},
+    "tezos": {},
+    "filecoin": {},
+    "ton": {
+      "tonCenterApiKeys": ["xxx"]
+    },
+    "polkadot": {},
+    "sui": {},
+    "cosmoshub": {},
+    "osmosis": {},
+    "axelar": {},
+    "coreum": {},
+    "thorchainrune": {},
+    "eos": {},
+    "telos": {},
+    "wax": {},
+    "zano": {},
+    "zcash": {},
+    "piratechain": {}
   }
 }

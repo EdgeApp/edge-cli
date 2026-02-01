@@ -7,6 +7,7 @@ import {
   lockEdgeCorePlugins,
   makeEdgeContext
 } from 'edge-core-js'
+import accountbasedPlugins from 'edge-currency-accountbased'
 import currencyPlugins from 'edge-currency-plugins'
 import parse from 'lib-cmdparse'
 import { dim, green, red } from 'nanocolors'
@@ -31,6 +32,7 @@ import { loadKeys } from './keysConfig'
 
 // Register currency plugins with edge-core-js
 addEdgeCorePlugins(currencyPlugins)
+addEdgeCorePlugins(accountbasedPlugins)
 lockEdgeCorePlugins()
 
 // Load API keys from keys.json
@@ -38,13 +40,33 @@ const keysConfig = loadKeys()
 
 // Build the plugins init object - enable all currency plugins with their API keys
 const pluginsInit: EdgeCorePluginsInit = {}
+
+// Add UTXO-based plugins (edge-currency-plugins)
 for (const pluginId of Object.keys(currencyPlugins)) {
   const pluginKeys = keysConfig.pluginApiKeys[pluginId]
-  // If pluginKeys is an object, pass it as init options; otherwise just enable the plugin
   if (pluginKeys != null && typeof pluginKeys === 'object') {
     pluginsInit[pluginId] = pluginKeys as { [key: string]: unknown }
   } else {
     pluginsInit[pluginId] = true
+  }
+}
+
+// Add account-based plugins (edge-currency-accountbased)
+// These are disabled by default due to slow initialization in CLI environments.
+// To enable specific plugins, add them to keys.json with `"enabled": true`.
+// Example: "ethereum": { "enabled": true, "evmScanApiKey": ["..."] }
+for (const pluginId of Object.keys(accountbasedPlugins)) {
+  const pluginKeys = keysConfig.pluginApiKeys[pluginId]
+  if (
+    pluginKeys != null &&
+    typeof pluginKeys === 'object' &&
+    (pluginKeys as Record<string, unknown>).enabled === true
+  ) {
+    // Remove the 'enabled' flag before passing to the plugin
+    const { enabled, ...rest } = pluginKeys as Record<string, unknown>
+    pluginsInit[pluginId] = Object.keys(rest).length > 0 ? rest : true
+  } else {
+    pluginsInit[pluginId] = false
   }
 }
 
