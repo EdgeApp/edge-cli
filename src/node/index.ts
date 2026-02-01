@@ -67,7 +67,12 @@ const getopt = new Getopt([
   ['p', 'password=ARG', 'Password'],
   ['w', 'wallet=ARG', 'Wallet ID'],
   ['t', 'test', 'Use test servers (login-tester, info-tester, sync-tester)'],
-  ['h', 'help', 'Display options']
+  ['h', 'help', 'Display options'],
+  // Command-specific options (passed through to commands):
+  ['n', 'name=ARG', 'Wallet name (for wallet-create)'],
+  ['', 'token=ARG', 'Token ID (for balance, tx-list, spend)'],
+  ['l', 'limit=ARG', 'Limit results (for tx-list)'],
+  ['', 'dry-run', 'Dry run mode (for spend)']
 ])
 
 function formatUsage(cmd: Command): string {
@@ -209,7 +214,8 @@ async function makeSession(config: CliConfig): Promise<Session> {
     // TODO: Fix the `Session` type to allow `undefined` here:
     account: undefined as any,
     context,
-    wallet: undefined as any
+    wallet: undefined as any,
+    commandOptions: {}
   }
 }
 
@@ -219,7 +225,8 @@ async function makeSession(config: CliConfig): Promise<Session> {
  */
 async function prepareSession(
   config: CliConfig,
-  cmd: Command
+  cmd: Command,
+  commandOptions: Session['commandOptions'] = {}
 ): Promise<Session> {
   // Create a context if we need one:
   const session: Session = cmd.needsContext
@@ -228,8 +235,12 @@ async function prepareSession(
         // TODO: Fix the `Session` type to allow `undefined` here:
         account: undefined as any,
         context: undefined as any,
-        wallet: undefined as any
+        wallet: undefined as any,
+        commandOptions: {}
       }
+
+  // Attach command options:
+  session.commandOptions = commandOptions
 
   // Create a login if we need one:
   if (cmd.needsLogin) {
@@ -307,6 +318,14 @@ async function main(): Promise<void> {
   config.testMode = options.test != null
   config.username = options.username ?? config.username
 
+  // Extract command-specific options:
+  const commandOptions = {
+    name: options.name,
+    token: options.token,
+    limit: options.limit,
+    dryRun: options['dry-run'] != null
+  }
+
   if (argv.length === 0) {
     // Run the interactive shell:
     const session = await makeSession(config)
@@ -328,7 +347,7 @@ async function main(): Promise<void> {
         : findCommand(argv.shift())
 
     // Set up the session:
-    const session = await prepareSession(config, cmd)
+    const session = await prepareSession(config, cmd, commandOptions)
     // Invoke the command:
     await cmd.invoke(jsonConsole, session, argv)
     showCoreLogs()
