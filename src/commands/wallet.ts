@@ -370,6 +370,241 @@ command(
 )
 
 // ============================================================================
+// Phase 2 Commands
+// ============================================================================
+
+command(
+  'wallet-rename',
+  {
+    usage: '<walletId> <newName>',
+    help: 'Rename a wallet',
+    needsAccount: true
+  },
+  async function (console, session, argv) {
+    if (argv.length !== 2) throw new UsageError(this)
+
+    await session.account.waitForAllWallets()
+    const wallet = findWallet(session, argv[0])
+    const newName = argv[1]
+
+    await wallet.renameWallet(newName)
+
+    console.log({
+      walletId: wallet.id,
+      name: newName,
+      status: 'Wallet renamed successfully'
+    })
+  }
+)
+
+command(
+  'wallet-archive',
+  {
+    usage: '<walletId>',
+    help: 'Archive a wallet (hide from active list)',
+    needsAccount: true
+  },
+  async function (console, session, argv) {
+    if (argv.length !== 1) throw new UsageError(this)
+
+    await session.account.waitForAllWallets()
+    const wallet = findWallet(session, argv[0])
+
+    const opts: EdgeWalletStates = {}
+    opts[wallet.id] = { archived: true }
+    await session.account.changeWalletStates(opts)
+
+    console.log({
+      walletId: wallet.id,
+      status: 'Wallet archived'
+    })
+  }
+)
+
+command(
+  'wallet-unarchive',
+  {
+    usage: '<walletId>',
+    help: 'Unarchive a wallet (restore to active list)',
+    needsAccount: true
+  },
+  async function (console, session, argv) {
+    if (argv.length !== 1) throw new UsageError(this)
+
+    // Need to find wallet by ID directly since it may be archived
+    const walletId = argv[0]
+
+    const opts: EdgeWalletStates = {}
+    opts[walletId] = { archived: false }
+    await session.account.changeWalletStates(opts)
+
+    console.log({
+      walletId,
+      status: 'Wallet unarchived'
+    })
+  }
+)
+
+command(
+  'max-spendable',
+  {
+    usage: '<walletId> <address> [--token <tokenId>]',
+    help: 'Calculate maximum spendable amount',
+    needsAccount: true
+  },
+  async function (console, session, argv) {
+    if (argv.length !== 2) throw new UsageError(this)
+
+    await session.account.waitForAllWallets()
+    const wallet = findWallet(session, argv[0])
+    const address = argv[1]
+    const tokenId = session.commandOptions.token ?? null
+
+    const maxNative = await wallet.getMaxSpendable({
+      tokenId,
+      spendTargets: [{ publicAddress: address }]
+    })
+
+    const multiplier = getMultiplier(wallet, tokenId)
+    const maxExchange = nativeToExchange(maxNative, multiplier)
+    const currencyCode = getCurrencyCode(wallet, tokenId)
+
+    console.log({
+      walletId: wallet.id,
+      tokenId,
+      currencyCode,
+      maxNativeAmount: maxNative,
+      maxExchangeAmount: maxExchange,
+      formatted: `${maxExchange} ${currencyCode}`
+    })
+  }
+)
+
+command(
+  'spend-max',
+  {
+    usage: '<walletId> <address> [--token <tokenId>] [--dry-run]',
+    help: 'Send maximum available balance to an address',
+    needsAccount: true
+  },
+  async function (console, session, argv) {
+    if (argv.length !== 2) throw new UsageError(this)
+
+    const [walletIdPrefix, address] = argv
+    const tokenId = session.commandOptions.token ?? null
+    const dryRun = session.commandOptions.dryRun === true
+
+    await session.account.waitForAllWallets()
+    const wallet = findWallet(session, walletIdPrefix)
+
+    // Get max spendable amount
+    const maxNative = await wallet.getMaxSpendable({
+      tokenId,
+      spendTargets: [{ publicAddress: address }]
+    })
+
+    if (maxNative === '0') {
+      console.log('No funds available to spend')
+      return
+    }
+
+    const multiplier = getMultiplier(wallet, tokenId)
+    const maxExchange = nativeToExchange(maxNative, multiplier)
+    const currencyCode = getCurrencyCode(wallet, tokenId)
+
+    const spendInfo: EdgeSpendInfo = {
+      tokenId,
+      spendTargets: [
+        {
+          publicAddress: address,
+          nativeAmount: maxNative
+        }
+      ]
+    }
+
+    // Create the transaction
+    const tx = await wallet.makeSpend(spendInfo)
+
+    console.log({
+      action: dryRun ? 'DRY RUN - not broadcast' : 'Preparing transaction',
+      walletId: wallet.id,
+      tokenId,
+      to: address,
+      amount: `${maxExchange} ${currencyCode}`,
+      nativeAmount: maxNative,
+      networkFee: tx.networkFee,
+      networkFeeExchange: `${nativeToExchange(
+        tx.networkFee,
+        getMultiplier(wallet, null)
+      )} ${wallet.currencyInfo.currencyCode}`
+    })
+
+    if (dryRun) {
+      return
+    }
+
+    // Sign and broadcast
+    const signedTx = await wallet.signTx(tx)
+    const broadcastTx = await wallet.broadcastTx(signedTx)
+    await wallet.saveTx(broadcastTx)
+
+    console.log({
+      status: 'SUCCESS',
+      txid: broadcastTx.txid
+    })
+  }
+)
+
+command(
+  'export-public',
+  {
+    usage: '<walletId>',
+    help: 'Export public key for display (xpub, address, etc.)',
+    needsAccount: true
+  },
+  async function (console, session, argv) {
+    if (argv.length !== 1) throw new UsageError(this)
+
+    await session.account.waitForAllWallets()
+    const wallet = findWallet(session, argv[0])
+
+    const publicKey = await session.account.getDisplayPublicKey(wallet.id)
+
+    console.log({
+      walletId: wallet.id,
+      type: wallet.type,
+      currencyCode: wallet.currencyInfo.currencyCode,
+      publicKey
+    })
+  }
+)
+
+command(
+  'export-private',
+  {
+    usage: '<walletId>',
+    help: 'Export private key for display (WIF, seed phrase, etc.) - USE WITH CAUTION',
+    needsAccount: true
+  },
+  async function (console, session, argv) {
+    if (argv.length !== 1) throw new UsageError(this)
+
+    await session.account.waitForAllWallets()
+    const wallet = findWallet(session, argv[0])
+
+    const privateKey = await session.account.getDisplayPrivateKey(wallet.id)
+
+    console.log({
+      walletId: wallet.id,
+      type: wallet.type,
+      currencyCode: wallet.currencyInfo.currencyCode,
+      privateKey,
+      warning: 'KEEP THIS SECRET - Anyone with this key can steal your funds!'
+    })
+  }
+)
+
+// ============================================================================
 // Existing commands (preserved)
 // ============================================================================
 
