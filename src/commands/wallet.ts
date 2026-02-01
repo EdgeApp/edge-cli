@@ -605,6 +605,194 @@ command(
 )
 
 // ============================================================================
+// Phase 3 Commands - Token Support
+// ============================================================================
+
+command(
+  'token-list',
+  {
+    usage: '<walletId>',
+    help: 'List available tokens for a wallet with enabled status',
+    needsAccount: true
+  },
+  async function (console, session, argv) {
+    if (argv.length !== 1) throw new UsageError(this)
+
+    await session.account.waitForAllWallets()
+    const wallet = findWallet(session, argv[0])
+
+    const allTokens = wallet.currencyConfig.allTokens
+    const enabledTokenIds = wallet.enabledTokenIds
+
+    const tokens = Object.entries(allTokens).map(([tokenId, token]) => ({
+      tokenId,
+      currencyCode: token.currencyCode,
+      displayName: token.displayName,
+      enabled: enabledTokenIds.includes(tokenId)
+    }))
+
+    // Sort by enabled status (enabled first), then by currencyCode
+    tokens.sort((a, b) => {
+      if (a.enabled !== b.enabled) return a.enabled ? -1 : 1
+      return a.currencyCode.localeCompare(b.currencyCode)
+    })
+
+    if (tokens.length === 0) {
+      console.log({
+        walletId: wallet.id,
+        message: 'No tokens available for this wallet type'
+      })
+    } else {
+      console.log({
+        walletId: wallet.id,
+        currencyCode: wallet.currencyInfo.currencyCode,
+        totalTokens: tokens.length,
+        enabledCount: enabledTokenIds.length,
+        tokens
+      })
+    }
+  }
+)
+
+command(
+  'token-enable',
+  {
+    usage: '<walletId> <tokenId>',
+    help: 'Enable a token on a wallet',
+    needsAccount: true
+  },
+  async function (console, session, argv) {
+    if (argv.length !== 2) throw new UsageError(this)
+
+    await session.account.waitForAllWallets()
+    const wallet = findWallet(session, argv[0])
+    const tokenId = argv[1]
+
+    // Verify token exists
+    const token = wallet.currencyConfig.allTokens[tokenId]
+    if (token == null) {
+      throw new Error(`Unknown token ID: ${tokenId}`)
+    }
+
+    // Check if already enabled
+    if (wallet.enabledTokenIds.includes(tokenId)) {
+      console.log({
+        walletId: wallet.id,
+        tokenId,
+        currencyCode: token.currencyCode,
+        status: 'Token already enabled'
+      })
+      return
+    }
+
+    // Enable the token
+    const newEnabledTokenIds = [...wallet.enabledTokenIds, tokenId]
+    await wallet.changeEnabledTokenIds(newEnabledTokenIds)
+
+    console.log({
+      walletId: wallet.id,
+      tokenId,
+      currencyCode: token.currencyCode,
+      displayName: token.displayName,
+      status: 'Token enabled successfully'
+    })
+  }
+)
+
+command(
+  'token-disable',
+  {
+    usage: '<walletId> <tokenId>',
+    help: 'Disable a token on a wallet',
+    needsAccount: true
+  },
+  async function (console, session, argv) {
+    if (argv.length !== 2) throw new UsageError(this)
+
+    await session.account.waitForAllWallets()
+    const wallet = findWallet(session, argv[0])
+    const tokenId = argv[1]
+
+    // Verify token exists
+    const token = wallet.currencyConfig.allTokens[tokenId]
+    if (token == null) {
+      throw new Error(`Unknown token ID: ${tokenId}`)
+    }
+
+    // Check if already disabled
+    if (!wallet.enabledTokenIds.includes(tokenId)) {
+      console.log({
+        walletId: wallet.id,
+        tokenId,
+        currencyCode: token.currencyCode,
+        status: 'Token already disabled'
+      })
+      return
+    }
+
+    // Disable the token
+    const newEnabledTokenIds = wallet.enabledTokenIds.filter(
+      id => id !== tokenId
+    )
+    await wallet.changeEnabledTokenIds(newEnabledTokenIds)
+
+    console.log({
+      walletId: wallet.id,
+      tokenId,
+      currencyCode: token.currencyCode,
+      displayName: token.displayName,
+      status: 'Token disabled successfully'
+    })
+  }
+)
+
+command(
+  'token-detected',
+  {
+    usage: '<walletId>',
+    help: 'List tokens detected on-chain but not yet enabled',
+    needsAccount: true
+  },
+  async function (console, session, argv) {
+    if (argv.length !== 1) throw new UsageError(this)
+
+    await session.account.waitForAllWallets()
+    const wallet = findWallet(session, argv[0])
+
+    const detectedTokenIds = wallet.detectedTokenIds
+    const enabledTokenIds = wallet.enabledTokenIds
+    const allTokens = wallet.currencyConfig.allTokens
+
+    // Filter to only show detected tokens that aren't enabled
+    const unenabled = detectedTokenIds.filter(
+      id => !enabledTokenIds.includes(id)
+    )
+
+    const tokens = unenabled.map(tokenId => {
+      const token = allTokens[tokenId]
+      return {
+        tokenId,
+        currencyCode: token?.currencyCode ?? 'Unknown',
+        displayName: token?.displayName ?? 'Unknown Token'
+      }
+    })
+
+    if (tokens.length === 0) {
+      console.log({
+        walletId: wallet.id,
+        message: 'No new tokens detected on-chain'
+      })
+    } else {
+      console.log({
+        walletId: wallet.id,
+        detectedCount: tokens.length,
+        tokens
+      })
+    }
+  }
+)
+
+// ============================================================================
 // Existing commands (preserved)
 // ============================================================================
 
